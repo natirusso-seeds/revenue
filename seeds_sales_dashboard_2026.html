@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seeds · Sales Dashboard 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e29;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f2f8;
+    --text2: #8b90a0;
+    --text3: #555b6e;
+    --green: #00e5a0;
+    --green-dim: rgba(0,229,160,0.12);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.12);
+    --blue: #4d9fff;
+    --blue-dim: rgba(77,159,255,0.12);
+    --red: #ff5f5f;
+    --red-dim: rgba(255,95,95,0.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.12);
+    --teal: #2dd4bf;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* TOP NAV */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,15,20,0.92);
+    backdrop-filter: blur(12px);
+  }
+  .nav-logo { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; color: var(--green); }
+  .nav-title { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .nav-pills { display: flex; gap: 8px; }
+  .pill {
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    padding: 5px 12px; border-radius: 20px;
+    border: 1px solid var(--border2);
+    cursor: pointer; color: var(--text2);
+    transition: all 0.2s;
+  }
+  .pill.active, .pill:hover { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+
+  /* LAYOUT */
+  .content { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+  .section-label {
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em; color: var(--text3);
+    text-transform: uppercase; margin-bottom: 14px;
+  }
+  .section { margin-bottom: 36px; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi:hover { border-color: var(--border2); }
+  .kpi-label { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .kpi-sub { font-size: 11px; color: var(--text2); }
+  .kpi-accent { position: absolute; top: 0; right: 0; width: 3px; height: 100%; border-radius: 0 12px 12px 0; }
+  .kpi-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    padding: 2px 7px; border-radius: 4px; margin-top: 6px;
+  }
+
+  /* CHART CARDS */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .chart-title { font-size: 13px; font-weight: 600; }
+  .chart-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .span2 { grid-column: span 2; }
+
+  /* QUOTA TABLE */
+  .quota-table { width: 100%; border-collapse: collapse; }
+  .quota-table th {
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    color: var(--text3); text-transform: uppercase;
+    text-align: left; padding: 6px 12px 10px;
+    letter-spacing: 0.08em;
+  }
+  .quota-table td { padding: 10px 12px; font-size: 13px; border-top: 1px solid var(--border); }
+  .quota-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .rep-name { font-weight: 600; }
+  .bar-wrap { width: 100%; background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; margin-top: 4px; }
+  .bar-fill { height: 6px; border-radius: 4px; transition: width 0.6s ease; }
+
+  /* PIPELINE FUNNEL */
+  .funnel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .funnel-label { font-size: 12px; min-width: 130px; color: var(--text2); }
+  .funnel-bar-wrap { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 28px; position: relative; overflow: hidden; }
+  .funnel-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-family: 'DM Mono', monospace; transition: width 0.8s ease; }
+  .funnel-count { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); min-width: 40px; text-align: right; }
+
+  /* LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+  .leg-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* FILTER TABS */
+  .filter-tabs { display: flex; gap: 6px; }
+  .ftab {
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+    cursor: pointer; color: var(--text3); transition: all 0.15s;
+  }
+  .ftab.on { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* ANIMATE IN */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .kpi { animation: fadeUp 0.4s ease both; }
+  .kpi:nth-child(1){animation-delay:.05s} .kpi:nth-child(2){animation-delay:.1s}
+  .kpi:nth-child(3){animation-delay:.15s} .kpi:nth-child(4){animation-delay:.2s}
+  .kpi:nth-child(5){animation-delay:.25s}
+  .chart-card { animation: fadeUp 0.5s ease both; animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-logo">SEEDS</span>
+  <span class="nav-title">Sales Dashboard · 2026</span>
+  <div class="nav-pills">
+    <span class="pill active" onclick="setQ('Q1')">Q1</span>
+    <span class="pill" onclick="setQ('Q2')">Q2</span>
+    <span class="pill" onclick="setQ('ALL')">Full Year</span>
+  </div>
+</nav>
+
+<div class="content">
+
+  <!-- KPI ROW -->
+  <div class="section">
+    <div class="section-label">Key indicators · Q2 2026 (live)</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-accent" style="background:var(--green)"></div>
+        <div class="kpi-label">Team net sales</div>
+        <div class="kpi-value" style="color:var(--green)" id="kpi-sales">376k</div>
+        <div class="kpi-sub">USD · weeks 15–20</div>
+        <div class="kpi-badge" style="background:var(--green-dim);color:var(--green)">Q1: 99% · Q2: 46% so far</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-accent" style="background:var(--amber)"></div>
+        <div class="kpi-label">Team quota (new clients)</div>
+        <div class="kpi-value" style="color:var(--amber)" id="kpi-quota">820k</div>
+        <div class="kpi-sub">USD · Q2 quota (new + existing)</div>
+        <div class="kpi-badge" style="background:var(--amber-dim);color:var(--amber)">New + Existing clients</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-accent" style="background:var(--blue)"></div>
+        <div class="kpi-label">Open pipeline</div>
+        <div class="kpi-value" style="color:var(--blue)">$236k</div>
+        <div class="kpi-sub">weighted forecast · 35 deals</div>
+        <div class="kpi-badge" style="background:var(--blue-dim);color:var(--blue)">$440k gross pipeline</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-accent" style="background:var(--purple)"></div>
+        <div class="kpi-label">New opps Q2</div>
+        <div class="kpi-value" style="color:var(--purple)">36</div>
+        <div class="kpi-sub">deals · April so far</div>
+        <div class="kpi-badge" style="background:var(--purple-dim);color:var(--purple)">vs 40 in Q1 same period</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-accent" style="background:var(--teal)"></div>
+        <div class="kpi-label">Avg weekly pace</div>
+        <div class="kpi-value" style="color:var(--teal)">63k</div>
+        <div class="kpi-sub">USD / week · Q2</div>
+        <div class="kpi-badge" style="background:rgba(45,212,191,0.12);color:var(--teal)">vs 47k in Q1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- WEEKLY KPI -->
+  <div class="section">
+    <div class="section-label">Weekly forecast · current week</div>
+    <div class="chart-card" style="padding:24px 28px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.4fr;gap:24px;align-items:start;">
+
+        <!-- Target input -->
+        <div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Monday target</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;color:var(--text3);font-family:'DM Mono',monospace;">$</span>
+            <input id="wk-target" type="number" placeholder="0"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;
+                     padding:10px 14px;font-size:22px;font-weight:600;color:var(--amber);
+                     font-family:'DM Mono',monospace;outline:none;-moz-appearance:textfield;"
+              oninput="updateWeekly()" />
+            <span style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;">k</span>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:6px;">Set at start of week</div>
+        </div>
+
+        <!-- Actual input -->
+        <div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Actual so far</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;color:var(--text3);font-family:'DM Mono',monospace;">$</span>
+            <input id="wk-actual" type="number" placeholder="0"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;
+                     padding:10px 14px;font-size:22px;font-weight:600;color:var(--green);
+                     font-family:'DM Mono',monospace;outline:none;-moz-appearance:textfield;"
+              oninput="updateWeekly()" />
+            <span style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;">k</span>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:6px;">Updated during the week</div>
+        </div>
+
+        <!-- Gap / delta -->
+        <div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Gap</div>
+          <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;line-height:1.1;" id="wk-gap">—</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px;" id="wk-gap-label">Enter target and actual</div>
+        </div>
+
+        <!-- Progress bar + attainment -->
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:8px;">
+            <span>Weekly attainment</span>
+            <span id="wk-pct-label">0%</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:6px;height:32px;overflow:hidden;position:relative;">
+            <div id="wk-bar" style="height:100%;width:0%;background:var(--green);border-radius:6px;transition:width .4s ease,background .3s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;">
+            </div>
+            <div id="wk-target-line" style="display:none;position:absolute;top:0;left:100%;width:2px;height:100%;background:var(--amber);opacity:.7;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:5px;font-family:'DM Mono',monospace;">
+            <span>$0</span>
+            <span id="wk-bar-max">target</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- NET SALES + QUOTA -->
+  <div class="section">
+    <div class="section-label">Net sales vs quota · individual <span style="margin-left:12px;font-size:10px;color:var(--green);font-family:'DM Mono',monospace;">Total quota (new + existing clients)</span></div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Quota attainment · per rep</div>
+            <div class="chart-sub">Total quota (new + existing clients)</div>
+          </div>
+          <div class="filter-tabs">
+            <span class="ftab on" onclick="switchQuota('Q2',this)">Q2</span>
+            <span class="ftab" onclick="switchQuota('Q1',this)">Q1</span>
+          </div>
+        </div>
+        <table class="quota-table">
+          <thead>
+            <tr>
+              <th>Rep</th>
+              <th>Quota</th>
+              <th>Net sales</th>
+              <th style="min-width:120px;">Progress</th>
+              <th>%</th>
+            </tr>
+          </thead>
+          <tbody id="quota-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Weekly net sales · team total</div>
+            <div class="chart-sub">2026 · kUSD, all reps combined</div>
+          </div>
+          <div class="filter-tabs">
+            <span class="ftab on" onclick="switchWeekly('bar',this)">Bar</span>
+            <span class="ftab" onclick="switchWeekly('line',this)">Trend</span>
+          </div>
+        </div>
+        <div style="position:relative;height:240px;">
+          <canvas id="weeklySalesChart" role="img" aria-label="Weekly new net sales 2026 by week number">Weekly sales 2026</canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY OPPS + PIPELINE FUNNEL -->
+  <div class="section">
+    <div class="section-label">Opportunity generation · HubSpot pipeline</div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Pipeline funnel</div>
+            <div class="chart-sub">Open deals by stage</div>
+          </div>
+        </div>
+        <div id="funnel-rows"></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Q1 vs Q2 opportunity generation</div>
+            <div class="chart-sub">Deals created per rep per quarter</div>
+          </div>
+        </div>
+        <div style="position:relative;height:240px;">
+          <canvas id="q1q2OppsChart" role="img" aria-label="Q1 vs Q2 opportunities by rep">Q1 vs Q2 opps</canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE BY REP + Q1 vs Q2 OPPS -->
+  <div class="section">
+    <div class="section-label">Team pipeline · rep breakdown</div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Open pipeline value by rep</div>
+          <div class="chart-sub">Active deals (Staffing + Oferta) · USD converted · 1400 ARS/USD</div>
+        </div>
+      </div>
+      <div style="position:relative;height:240px;">
+        <canvas id="pipelineByRepChart" role="img" aria-label="Pipeline value per rep">Pipeline by rep</canvas>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- NET REVENUE -->
+  <div class="section">
+    <div class="section-label">Net revenue · USD miles · 2025 vs 2026</div>
+    <div class="two-col">
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Monthly net revenue</div>
+            <div class="chart-sub">2025 vs 2026 · all streams</div>
+          </div>
+          <div class="filter-tabs">
+            <span class="ftab on" onclick="switchRevChart('bar',this)">Bar</span>
+            <span class="ftab" onclick="switchRevChart('line',this)">Trend</span>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="leg-item"><span class="leg-dot" style="background:#555b6e"></span>2025</span>
+          <span class="leg-item"><span class="leg-dot" style="background:#00e5a0"></span>2026</span>
+        </div>
+        <div style="position:relative;height:220px;">
+          <canvas id="revMonthlyChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">QoQ net revenue</div>
+            <div class="chart-sub">2025 vs 2026 por quarter</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
+          <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">Q1 2026</div>
+            <div style="font-size:18px;font-weight:600;color:var(--text);margin:4px 0;">$809k</div>
+            <div style="font-size:10px;color:var(--red);">▼ 6% vs Q1 2025</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid rgba(0,229,160,0.2);">
+            <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">Q2 2026</div>
+            <div style="font-size:18px;font-weight:600;color:var(--green);margin:4px 0;">$917k</div>
+            <div style="font-size:10px;color:var(--green);">▲ +13% vs Q1 2026</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">Q2 2025</div>
+            <div style="font-size:18px;font-weight:600;color:var(--text2);margin:4px 0;">$928k</div>
+            <div style="font-size:10px;color:var(--amber);">▼ 1% vs Q2 2025</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+  <!-- PIPELINE VS QUOTA GAP -->
+  <div class="section">
+    <div class="section-label">Pipeline vs quota · team gap analysis · Q2</div>
+    <div class="chart-card" style="padding:24px 28px;">
+
+      <!-- Waterfall numbers row -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-bottom:28px;position:relative;">
+
+        <div style="text-align:center;padding:0 8px;">
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Quota</div>
+          <div style="font-size:28px;font-weight:700;color:var(--text)">$820k</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Q2 quota (new + existing)</div>
+        </div>
+
+        <div style="text-align:center;padding:0 8px;">
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Sold</div>
+          <div style="font-size:28px;font-weight:700;color:var(--green)">$376k</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">46% attained</div>
+        </div>
+
+        <div style="text-align:center;padding:0 8px;">
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Remaining</div>
+          <div style="font-size:28px;font-weight:700;color:var(--amber)">$444k</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">still to close</div>
+        </div>
+
+        <div style="text-align:center;padding:0 8px;">
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Active pipeline</div>
+          <div style="font-size:28px;font-weight:700;color:var(--blue)">$440k</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">73% coverage</div>
+        </div>
+
+        <div style="text-align:center;padding:0 8px;">
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Uncovered gap</div>
+          <div style="font-size:28px;font-weight:700;color:var(--red)">$208k</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">uncovered gap</div>
+        </div>
+      </div>
+
+      <!-- Progress bar: quota breakdown -->
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px;">
+          <span>Quota coverage breakdown</span>
+          <span>$820k total</span>
+        </div>
+        <div style="display:flex;height:28px;border-radius:6px;overflow:hidden;gap:2px;">
+          <div style="width:46%;background:#00e5a0;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono',monospace;color:#04342C;font-weight:600;">Sold 46%</div>
+          <div style="width:29%;background:#4d9fff55;border:1px solid #4d9fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono',monospace;color:#4d9fff;">Forecast 29%</div>
+          <div style="width:25%;background:#ff5f5f33;border:1px solid #ff5f5f;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono',monospace;color:#ff5f5f;">Gap 25%</div>
+        </div>
+      </div>
+
+      <!-- Forecast breakdown by stage & rep -->
+      <div style="border-top:1px solid var(--border);padding-top:18px;margin-bottom:18px;">
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Weighted forecast breakdown</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;">
+            <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;">Staffing · 31 deals · 50%</div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-size:18px;font-weight:600;color:var(--blue)">$204k</span>
+              <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;">gross $408k</span>
+            </div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;border:1px solid rgba(0,229,160,0.2);">
+            <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;">Oferta de trabajo · 4 deals · 100%</div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-size:18px;font-weight:600;color:var(--green)">$32k</span>
+              <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;">gross $32k</span>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">By rep</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;min-width:130px;color:var(--text2)">Camila Jordan</span>
+            <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:18px;overflow:hidden;"><div style="width:46.6%;background:#00e5a099;height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-family:'DM Mono',monospace;color:#00e5a0;">$110k</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;min-width:130px;color:var(--text2)">Pedro Uriarte</span>
+            <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:18px;overflow:hidden;"><div style="width:14.4%;background:#f5a62399;height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-family:'DM Mono',monospace;color:#f5a623;">$34k</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;min-width:130px;color:var(--text2)">Tomas Barale</span>
+            <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:18px;overflow:hidden;"><div style="width:10.6%;background:#4d9fff99;height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-family:'DM Mono',monospace;color:#4d9fff;">$25k</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;min-width:130px;color:var(--text2)">Jose Imaz</span>
+            <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:18px;overflow:hidden;"><div style="width:10.2%;background:#a78bfa99;height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-family:'DM Mono',monospace;color:#a78bfa;">$24k</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;min-width:130px;color:var(--text2)">Others</span>
+            <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:18px;overflow:hidden;"><div style="width:18.2%;background:#55556699;height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-family:'DM Mono',monospace;color:#888;">$44k</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nuevo lead de ventas · upside -->
+      <div style="border-top:1px solid var(--border);padding-top:18px;">
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Nuevo lead de ventas · $465k potencial</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+
+          <div style="background:var(--surface2);border-radius:8px;padding:14px 16px;">
+            <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px;">Nuevo lead de ventas</div>
+            <div style="font-size:20px;font-weight:600;color:var(--text)">$465k</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">32 deals sin calificar</div>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:8px;padding:14px 16px;">
+            <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px;">At Q1 conv. rate (35%)</div>
+            <div style="font-size:20px;font-weight:600;color:var(--amber)">+$163k</div>
+            <div style="font-size:11px;color:var(--amber);margin-top:3px;">covers 78% of gap</div>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:8px;padding:14px 16px;border:1px solid rgba(0,229,160,0.2);">
+            <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px;">At Q2 conv. rate (54%)</div>
+            <div style="font-size:20px;font-weight:600;color:var(--green)">+$251k</div>
+            <div style="font-size:11px;color:var(--green);margin-top:3px;">covers gap + $43k buffer</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COLORS = {
+  tomas:   '#4d9fff',
+  camila:  '#00e5a0',
+  pedro:   '#f5a623',
+  imaz:    '#a78bfa',
+  benja:   '#ff5f5f',
+  cande:   '#2dd4bf',
+  other:   '#555b6e',
+};
+
+// ── DATA ────────────────────────────────────────────────
+const quotaNewClients = { "Jose Imaz":50000,"Tomas Barale":40000,"Pedro Uriarte":40000,"Camila Jordan":0,"Benjamin Miguens":30000 };
+const quotaTotal      = { 'Jose Imaz':90000,'Tomas Barale':240000,'Pedro Uriarte':240000,'Camila Jordan':220000,'Benjamin Miguens':30000 };
+
+// Net sales from PowerBI file - TOTAL (new + existing clients) per rep in kUSD
+const netSalesQ2 = { 'Tomas Barale':141.0,'Camila Jordan':2.5,'Pedro Uriarte':22.4,'Jose Imaz':47.4,'Benjamin Miguens':0 };
+const netSalesQ1 = { 'Tomas Barale':180.3,'Camila Jordan':207.6,'Pedro Uriarte':126.1,'Jose Imaz':94.4,'Benjamin Miguens':0 };
+
+const weeklySalesData = {
+  labels: ['Wk2','Wk3','Wk4','Wk5','Wk6','Wk7','Wk8','Wk9','Wk10','Wk11','Wk12','Wk13','Wk14','Wk15','Wk16','Wk17','Wk18','Wk19','Wk20'],
+  tomas:  [8.27,28.54,16.05,10.82,14.15,11.22,7.19,12.19,35.40,21.50,7.35,23.73,0,32.19,140.01,0,1.66,24.54,0],
+  camila: [0,4.44,0,23.22,0,0.10,12.73,17.48,30.80,71.06,0,31.77,0,0,2.51,0,13.59,9.51,32.87],
+  pedro:  [0,21.58,0,0,0,0,0,0,0,33.79,2.53,68.22,0,20.43,0,2.02,46.65,0,0],
+  imaz:   [3.37,0,0,0,0,0,12.67,0,32.11,8.54,32.29,0,5.39,0,14.88,11.12,1.83,0,15.04],
+};
+
+// Weekly opps: total created vs qualified (Staffing + Oferta only)
+const weeklyOppsData = {
+  labels:     ['Wk2','Wk3','Wk4','Wk6','Wk7','Wk8','Wk9','Wk10','Wk11','Wk12','Wk13','Wk14','Wk15','Wk16','Wk17','Wk18'],
+  total:      [3,5,3,1,3,3,8,1,1,8,2,2,13,17,6,3],
+  qualified:  [2,1,3,1,0,1,3,1,0,1,1,0,9,9,3,0],
+};
+
+const funnelData = [
+  { label:'Nuevo lead',     count:32, color:'#4d9fff' },
+  { label:'Staffing',       count:31, color:'#00e5a0' },
+  { label:'Oferta trabajo', count:4,  color:'#f5a623' },
+  { label:'A validar Ops',  count:4,  color:'#a78bfa' },
+  { label:'Stand-by Grower',count:5,  color:'#ff5f5f' },
+];
+
+const pipelineReps = {
+  labels: ['Camila Jordan','Tomas Barale','Pedro Uriarte','Jose Imaz','Cande Trimarco','Benjamin Miguens','Tomas Lubary'],
+  q1opps: [12,16,3,6,7,4,1],
+  q2opps: [6,11,3,2,2,0,1],
+  activeUSD: [220564,45321,48700,45266,35786,25214,19000],
+  watchUSD:  [11429,320500,0,25779,76643,0,9429],
+};
+
+// ── QUOTA TABLE ──────────────────────────────────────────
+function buildQuotaTable(quarter='Q2') {
+  const tbody = document.getElementById('quota-tbody');
+  const reps = ['Tomas Barale','Camila Jordan','Pedro Uriarte','Jose Imaz','Benjamin Miguens'];
+  let totalQ=0, totalS=0;
+  tbody.innerHTML = reps.map(rep => {
+    const q = quotaTotal[rep] / 1000;
+    const s = quarter === 'Q1' ? netSalesQ1[rep] : netSalesQ2[rep];
+    totalQ += q; totalS += s;
+    const pct = q > 0 ? Math.min((s/q)*100,150) : null;
+    const color = pct === null ? '#555b6e' : pct >= 100 ? '#00e5a0' : pct >= 60 ? '#f5a623' : '#ff5f5f';
+    const barW = pct !== null ? Math.min(pct,100) : 0;
+    const label = pct !== null ? `${pct.toFixed(0)}%${quarter==='Q2'?' *':''}` : 'N/A';
+    return `<tr>
+      <td><span class="rep-name">${rep}</span></td>
+      <td style="font-family:'DM Mono',monospace;color:var(--text2)">${q > 0 ? q.toFixed(0)+'k' : '—'}</td>
+      <td style="font-family:'DM Mono',monospace;color:${color}">${s.toFixed(1)}k</td>
+      <td><div class="bar-wrap"><div class="bar-fill" style="width:${barW}%;background:${color}"></div></div></td>
+      <td style="font-family:'DM Mono',monospace;color:${color};font-size:12px">${label}</td>
+    </tr>`;
+  }).join('') + `<tr>
+    <td style="font-weight:700;font-size:13px">TEAM</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--text2);font-weight:600">${totalQ.toFixed(0)}k</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--green);font-weight:600">${totalS.toFixed(1)}k</td>
+    <td><div class="bar-wrap"><div class="bar-fill" style="width:${Math.min((totalS/totalQ)*100,100).toFixed(0)}%;background:var(--green)"></div></div></td>
+    <td style="font-family:'DM Mono',monospace;color:var(--green);font-size:12px">${((totalS/totalQ)*100).toFixed(0)}%</td>
+  </tr>`;
+}
+
+// ── FUNNEL ───────────────────────────────────────────────
+function buildFunnel() {
+  const maxCount = Math.max(...funnelData.map(d => d.count));
+  document.getElementById('funnel-rows').innerHTML = funnelData.map(d => `
+    <div class="funnel-row">
+      <div class="funnel-label">${d.label}</div>
+      <div class="funnel-bar-wrap">
+        <div class="funnel-bar" style="width:${(d.count/maxCount*100).toFixed(0)}%;background:${d.color}22;color:${d.color};border-left:3px solid ${d.color}">
+          ${d.count} deals
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── CHARTS ───────────────────────────────────────────────
+Chart.defaults.color = '#555b6e';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+const LABELS = weeklySalesData.labels;
+const q1Labels = LABELS.slice(0,13), q2Labels = LABELS.slice(13);
+
+let weeklySalesChart;
+function buildWeeklySales(type='bar') {
+  if (weeklySalesChart) weeklySalesChart.destroy();
+  const totals = LABELS.map((_,i) =>
+    +(weeklySalesData.tomas[i]+weeklySalesData.camila[i]+weeklySalesData.pedro[i]+weeklySalesData.imaz[i]).toFixed(1)
+  );
+  const avgQ1 = totals.slice(0,13).reduce((a,b)=>a+b,0)/13;
+  const cfg = type === 'bar' ? {
+    type: 'bar',
+    data: {
+      labels: LABELS,
+      datasets: [
+        {label:'Tomas',  data:weeklySalesData.tomas,  backgroundColor:'#4d9fff55', borderColor:'#4d9fff', borderWidth:1},
+        {label:'Camila', data:weeklySalesData.camila, backgroundColor:'#00e5a055', borderColor:'#00e5a0', borderWidth:1},
+        {label:'Pedro',  data:weeklySalesData.pedro,  backgroundColor:'#f5a62355', borderColor:'#f5a623', borderWidth:1},
+        {label:'Imaz',   data:weeklySalesData.imaz,   backgroundColor:'#a78bfa55', borderColor:'#a78bfa', borderWidth:1},
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{autoSkip:false,maxRotation:45}},
+        y:{stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{callback:v=>v+'k'}}
+      }
+    }
+  } : {
+    type: 'line',
+    data: {
+      labels: LABELS,
+      datasets: [
+        {label:'Weekly total', data:totals, borderColor:'#4d9fff', backgroundColor:'rgba(77,159,255,0.08)', fill:true, tension:0.4, pointRadius:3, borderWidth:2},
+        {label:'Q1 avg', data:LABELS.map((_,i)=>i<13?avgQ1:null), borderColor:'#555b6e', borderWidth:1.5, borderDash:[4,3], pointRadius:0, fill:false},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{autoSkip:false,maxRotation:45}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{callback:v=>v+'k'}}
+      }
+    }
+  };
+  weeklySalesChart = new Chart(document.getElementById('weeklySalesChart'), cfg);
+}
+
+function switchWeekly(type, el) {
+  document.querySelectorAll('.ftab').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  buildWeeklySales(type);
+}
+
+function buildWeeklyOpps() {
+  const OL = weeklyOppsData.labels;
+  document.getElementById('opp-legend').innerHTML = `
+    <span class="leg-item"><span class="leg-dot" style="background:#555b6e"></span>Total created</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#00e5a0"></span>Qualified (Staffing + Oferta)</span>`;
+
+  new Chart(document.getElementById('weeklyOppsChart'), {
+    type:'bar',
+    data:{
+      labels: OL,
+      datasets:[
+        { label:'Total created',  data:weeklyOppsData.total,     backgroundColor:'#555b6e55', borderColor:'#555b6e', borderWidth:1 },
+        { label:'Qualified',      data:weeklyOppsData.qualified, backgroundColor:'#00e5a099', borderColor:'#00e5a0', borderWidth:1 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          afterBody: ctx => {
+            const i = ctx[0].dataIndex;
+            const tot = weeklyOppsData.total[i];
+            const q   = weeklyOppsData.qualified[i];
+            return tot > 0 ? `Conv. rate: ${Math.round(q/tot*100)}%` : '';
+          }
+        }}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{autoSkip:false,maxRotation:45}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{stepSize:2}}
+      }
+    }
+  });
+}
+
+function buildPipelineByRep() {
+  const reps = ['Camila Jordan','Tomas Barale','Pedro Uriarte','Jose Imaz','Cande Trimarco','Benja Miguens','Tomas Lubary'];
+  const activeK = pipelineReps.activeUSD.map(v => +(v/1000).toFixed(1));
+  const watchK  = pipelineReps.watchUSD.map(v => +(v/1000).toFixed(1));
+  const colors  = [COLORS.camila,COLORS.tomas,COLORS.pedro,COLORS.imaz,COLORS.cande,COLORS.benja,'#888780'];
+  new Chart(document.getElementById('pipelineByRepChart'), {
+    type:'bar',
+    data:{
+      labels: reps,
+      datasets:[
+        { label:'Active pipeline', data:activeK, backgroundColor:colors.map(c=>c+'cc'), borderColor:colors, borderWidth:1 },
+        { label:'Nuevo lead de ventas',       data:watchK,  backgroundColor:colors.map(c=>c+'33'), borderColor:colors, borderWidth:1, borderDash:[3,2] },
+      ]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true, labels:{color:'#8b90a0',boxWidth:10,boxHeight:10}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: $${ctx.parsed.x.toFixed(1)}k USD`}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{callback:v=>'$'+v+'k'}},
+        y:{grid:{display:false}}
+      }
+    }
+  });
+}
+
+function buildQ1Q2Opps() {
+  const reps    = ['Tomas','Camila','Pedro','Imaz','Benja','Cande'];
+  const q1total = [12,10,2,5,1,9];
+  const q2total = [18,8,4,3,3,0];
+
+  new Chart(document.getElementById('q1q2OppsChart'), {
+    type:'bar',
+    data:{
+      labels: reps,
+      datasets:[
+        { label:'Q1', data:q1total, backgroundColor:'#4d9fff88', borderColor:'#4d9fff', borderWidth:1 },
+        { label:'Q2', data:q2total, backgroundColor:'#00e5a088', borderColor:'#00e5a0', borderWidth:1 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true, labels:{color:'#8b90a0', boxWidth:10, boxHeight:10, font:{size:11}}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y} deals`}}
+      },
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{stepSize:3}}
+      }
+    }
+  });
+}
+
+// ── QUARTER TOGGLE ───────────────────────────────────────
+function setQ(q) {
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  // Update KPI row for Q1 context
+  const isQ1 = q === 'Q1';
+  document.getElementById('kpi-sales').textContent = isQ1 ? '608k' : (q==='ALL'?'984k':'376k');
+  document.getElementById('kpi-quota').textContent = isQ1 ? '820k' : (q==='ALL'?'820k':'820k');
+}
+
+// ── NET REVENUE CHARTS ───────────────────────────────────
+// Monthly data: 2025 and 2026 by month
+const revData = {
+  months2025: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  rev2025:    [292.5, 292.4, 279.6, 299.8, 310.1, 317.8, 285.9, 303.4, 295.2, 295.5, 292.2, 286.2],
+  months2026: ['Jan','Feb','Mar','Apr','May','Jun'],
+  rev2026:    [265.4, 268.6, 274.8, 305.8, 314.8, 296.1],
+};
+
+
+let revChart;
+function buildRevMonthly(type='bar') {
+  if(revChart) revChart.destroy();
+  revChart = new Chart(document.getElementById('revMonthlyChart'), {
+    type: type === 'bar' ? 'bar' : 'line',
+    data: {
+      labels: revData.months2025,
+      datasets: [
+        { label:'2025', data:revData.rev2025, backgroundColor:'#555b6e55', borderColor:'#555b6e', borderWidth:1, fill: type==='line', tension:0.4 },
+        { label:'2026', data:[...revData.rev2026, ...Array(6).fill(null)], backgroundColor:'#00e5a088', borderColor:'#00e5a0', borderWidth:type==='line'?2:1, fill: type==='line', tension:0.4, pointRadius: type==='line'?3:0 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: $${ctx.parsed.y?.toFixed(0)}k`}} },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{callback:v=>'$'+v+'k'} }
+      }
+    }
+  });
+}
+
+function switchRevChart(type, el) {
+  document.querySelectorAll('.filter-tabs .ftab').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  buildRevMonthly(type);
+}
+
+// ── WEEKLY KPI ───────────────────────────────────────────
+function updateWeekly() {
+  const target = parseFloat(document.getElementById('wk-target').value) || 0;
+  const actual = parseFloat(document.getElementById('wk-actual').value) || 0;
+
+  const gapEl    = document.getElementById('wk-gap');
+  const labelEl  = document.getElementById('wk-gap-label');
+  const barEl    = document.getElementById('wk-bar');
+  const pctEl    = document.getElementById('wk-pct-label');
+  const maxEl    = document.getElementById('wk-bar-max');
+
+  if (target === 0 && actual === 0) {
+    gapEl.textContent = '—';
+    gapEl.style.color = 'var(--text3)';
+    labelEl.textContent = 'Enter target and actual';
+    barEl.style.width = '0%';
+    pctEl.textContent = '0%';
+    return;
+  }
+
+  const pct  = target > 0 ? Math.min((actual / target) * 100, 150) : 0;
+  const gap  = actual - target;
+  const ahead = gap >= 0;
+
+  // Gap display
+  gapEl.textContent  = (ahead ? '+' : '') + gap.toFixed(1) + 'k';
+  gapEl.style.color  = ahead ? 'var(--green)' : 'var(--red)';
+  labelEl.textContent = ahead
+    ? `$${gap.toFixed(1)}k ahead of target`
+    : `$${Math.abs(gap).toFixed(1)}k below target`;
+  labelEl.style.color = ahead ? 'var(--green)' : 'var(--red)';
+
+  // Progress bar
+  const barW = Math.min(pct, 100).toFixed(1);
+  barEl.style.width      = barW + '%';
+  barEl.style.background = pct >= 100 ? 'var(--green)' : pct >= 70 ? 'var(--amber)' : 'var(--red)';
+  pctEl.textContent      = pct.toFixed(0) + '%';
+  pctEl.style.color      = pct >= 100 ? 'var(--green)' : pct >= 70 ? 'var(--amber)' : 'var(--red)';
+  maxEl.textContent      = target > 0 ? '$' + target + 'k target' : '';
+}
+
+// ── QUOTA TOGGLE ─────────────────────────────────────────────────
+function switchQuota(q, el) {
+  document.querySelectorAll('.filter-tabs .ftab').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  buildQuotaTable(q);
+}
+
+// ── INIT ─────────────────────────────────────────────────
+buildQuotaTable('Q2');
+buildRevMonthly();
+buildFunnel();
+buildWeeklySales();
+buildPipelineByRep();
+buildQ1Q2Opps();
+</script>
+</body>
+</html>
